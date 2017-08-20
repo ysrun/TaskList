@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentPage 
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:ViewModel="clr-namespace:TaskList.ViewModel"
+    xmlns:local="clr-namespace:TaskList"
+    x:Class="TaskList.MoneyPage"
+    xmlns:Attached="clr-namespace:TaskList.AttachedProperty"
+    Attached:ContentPageAttached.OnApperingAction="{Binding ApperingAction}"
+    Title="Money">
+    <ContentPage.BindingContext>
+        <ViewModel:MoneyPageViewModel/>
+    </ContentPage.BindingContext>
+    <ContentPage.Padding>
+        <OnPlatform x:TypeArguments="Thickness"
+                    iOS="0, 20, 20, 0"
+                    Android="0, 0, 0, 0"
+                    WinPhone="0, 0, 0, 0" />
+    </ContentPage.Padding>
+        <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Entry Margin="10,0,0,0" Keyboard="Numeric" VerticalOptions="Center" Text="{Binding MoneyText}" Placeholder="金額を入力して下さい"/>
+            <Frame HeightRequest="35" Grid.Column="1" Margin="10,0,0,0" Padding="0" OutlineColor="Blue" HasShadow="false">
+                <Button WidthRequest="50" Text="融資" Attached:ButtonAttached.OnClickAction="{Binding AddClickAction}"/>
+            </Frame>
+            <Entry Grid.Row="1" Margin="10,0,0,0" VerticalOptions="Center" Text="{Binding Comment}" Placeholder="コメントを入力して下さい"/>
+            
+            <Frame Grid.Row="1" HeightRequest="35" Grid.Column="1" Margin="10,0,0,0" Padding="0" OutlineColor="Blue" HasShadow="false">
+                <Button WidthRequest="50" Text="返済" Attached:ButtonAttached.OnClickAction="{Binding MinusClickAction}"/>
+            </Frame>
+            <StackLayout Grid.Row="2" Margin="10,0,0,0" Orientation="Horizontal">
+                <Label VerticalOptions="Center" Text="日付"/>
+                <DatePicker Margin="10,0,0,0" Format="yyyy/MM/dd" Date="{Binding Date}"/>
+            </StackLayout>
+
+        </Grid>
+        <Grid Margin="10,0,0,0" Grid.Row = "1">
+            <Label Text="{Binding Total}" TextColor="Red"/>
+        </Grid>
+        <ListView Grid.Row="2" Attached:ListViewAttached.OnRefreshAction="{Binding ListRefreshAction}"
+            Attached:ListViewAttached.IsRefresh="{Binding IsRefresh}"
+            ItemsSource="{Binding VisibleMoneyList}">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                    <ViewCell.ContextActions>
+                        <MenuItem IsDestructive="true" Attached:MenuItemAttached.OnClickAction="{Binding DeleteMenuClickAction}" Text="削除"/>
+                    </ViewCell.ContextActions>
+                        <Grid RowSpacing="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid Margin="20,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Text="{Binding Date, StringFormat='{0:yyyy/MM/dd}'}"/>
+                                <Label Margin = "5,0,0,0" Grid.Column="1" Text="{Binding Money, StringFormat='{0:n0}円'}" TextColor="Red" VerticalTextAlignment="Center" VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsMinus}" Value="True">
+                                            <Setter Property="TextColor" Value="Black"/>
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </Grid>
+                            <Grid Grid.Row="1" Margin="0,5">
+                                <Label FontSize="10" TextColor="Blue" VerticalOptions="Center" Margin="20,0,0,0" Text="{Binding Comment}"/>
+                            </Grid>
+                        </Grid>
+                     </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</ContentPage>
