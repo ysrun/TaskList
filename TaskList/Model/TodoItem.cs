@@ -146,6 +146,9 @@ namespace TaskList
 		[JsonIgnore]
 		public Action<object> DeleteMenuClickAction { get; set; }
 
+		[JsonIgnore]
+		public Action<object> EditMenuClickAction { get; set; }
+
         [JsonIgnore]
         public string ButtonCaption { get; set; }
 
@@ -157,7 +160,7 @@ namespace TaskList
                 string msg = string.Empty;
                 if (Done)
                 {
-                    msg = CompleteDate > new DateTime(1970, 1, 1) ? "完了日時：" + CompleteDate.ToString("yyyy/MM/dd HH:mm") + "   " : string.Empty;
+                    msg = CompleteDate > new DateTime(1900, 1, 1) ? "完了日時：" + CompleteDate.ToString("yyyy/MM/dd HH:mm") + "   " : string.Empty;
 
                 }
                 else

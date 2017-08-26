@@ -29,36 +29,39 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="App.xaml" />
-    <EmbeddedResource Include="TaskListPage.xaml" />
-    <EmbeddedResource Include="MenuPage.xaml" />
-    <EmbeddedResource Include="MoneyPage.xaml" />
+    <EmbeddedResource Include="View\MoneyPage.xaml" />
+    <EmbeddedResource Include="View\TaskListPage.xaml" />
+    <EmbeddedResource Include="View\TodoInputView.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="TaskListPage.xaml.cs">
-      <DependentUpon>TaskListPage.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="money.cs" />
-    <Compile Include="TodoItemManager.cs" />
     <Compile Include="AttachedProperty\ButtonAttached.cs" />
     <Compile Include="BaseClass\ViewModelBase.cs" />
     <Compile Include="ViewModel\TaskListViewModel.cs" />
-    <Compile Include="MenuPage.xaml.cs">
-      <DependentUpon>MenuPage.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Extention\ImageResource.cs" />
-    <Compile Include="MoneyPage.xaml.cs">
-      <DependentUpon>MoneyPage.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="TodoItem.cs" />
-    <Compile Include="moneyManager.cs" />
     <Compile Include="ViewModel\MoneyPageViewModel.cs" />
-    <Compile Include="ChargeItem.cs" />
     <Compile Include="Controls\ItemsControl.cs" />
     <Compile Include="Controls\SelectedButton.cs" />
+    <Compile Include="Model\money.cs" />
+    <Compile Include="Model\TodoItem.cs" />
+    <Compile Include="View\MoneyPage.xaml.cs">
+      <DependentUpon>MoneyPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\TaskListPage.xaml.cs">
+      <DependentUpon>TaskListPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Model\ChargeItem.cs" />
+    <Compile Include="TableManager\moneyManager.cs" />
+    <Compile Include="TableManager\TodoItemManager.cs" />
+    <Compile Include="View\TodoInputView.xaml.cs">
+      <DependentUpon>TodoInputView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ViewModel\TodoInputViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Xamarin.Forms.Core">
@@ -101,6 +104,9 @@
     <Folder Include="Resouces\Images\" />
     <Folder Include="Extention\" />
     <Folder Include="Controls\" />
+    <Folder Include="Model\" />
+    <Folder Include="View\" />
+    <Folder Include="TableManager\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <Import Project="..\packages\Xamarin.Forms.2.3.4.231\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+Xamarin.iOS10+xamarinmac20\Xamarin.Forms.targets" Condition="Exists('..\packages\Xamarin.Forms.2.3.4.231\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+Xamarin.iOS10+xamarinmac20\Xamarin.Forms.targets')" />

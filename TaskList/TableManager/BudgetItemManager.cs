@@ -1,4 +1,4 @@
-/*
+﻿/*
  * To add Offline Sync Support:
  *  1) Add the NuGet package Microsoft.Azure.Mobile.Client.SQLiteStore (and dependencies) to all client projects
  *  2) Uncomment the #define OFFLINE_SYNC_ENABLED
@@ -24,20 +24,20 @@ using Microsoft.WindowsAzure.MobileServices.Sync;
 
 namespace TaskList
 {
-	public partial class TodoItemManager
+	public partial class BudgetItemManager
 	{
-		static TodoItemManager defaultInstance = new TodoItemManager();
+		static BudgetItemManager defaultInstance = new BudgetItemManager();
 		MobileServiceClient client;
 
 #if OFFLINE_SYNC_ENABLED
         IMobileServiceSyncTable<TodoItem> todoTable;
 #else
-		IMobileServiceTable<TodoItem> todoTable;
+        IMobileServiceTable<BudgetManagement> budgetTable;
 #endif
 
 		const string offlineDbPath = @"localstore.db";
 
-		private TodoItemManager()
+		private BudgetItemManager()
 		{
 			this.client = new MobileServiceClient("https://tasklistcs.azurewebsites.net");
 
@@ -50,11 +50,11 @@ namespace TaskList
 
             this.todoTable = client.GetSyncTable<TodoItem>();
 #else
-			this.todoTable = client.GetTable<TodoItem>();
+			this.budgetTable = client.GetTable<BudgetManagement>();
 #endif
 		}
 
-		public static TodoItemManager DefaultManager
+		public static BudgetItemManager DefaultManager
 		{
 			get
 			{
@@ -71,14 +71,13 @@ namespace TaskList
 			get { return client; }
 		}
 
-        public bool IsDoingTaskShow { get; set; } = true;
 
 		public bool IsOfflineEnabled
 		{
-			get { return todoTable is Microsoft.WindowsAzure.MobileServices.Sync.IMobileServiceSyncTable<TodoItem>; }
+            get { return budgetTable is Microsoft.WindowsAzure.MobileServices.Sync.IMobileServiceSyncTable<BudgetManagement>; }
 		}
 
-		public async Task<ObservableCollection<TodoItem>> GetTodoItemsAsync(bool syncItems = false)
+		public async Task<ObservableCollection<BudgetManagement>> GetBudgetManagementsAsync(bool syncItems = false)
 		{
 			try
 			{
@@ -88,25 +87,12 @@ namespace TaskList
                     await this.SyncAsync();
                 }
 #endif
-                IEnumerable<TodoItem> items;
+                IEnumerable<BudgetManagement> items;
 
-                if (!IsDoingTaskShow)
-                {
-					items = await todoTable
-						.Where(todoItem => todoItem.Done != IsDoingTaskShow)
-                        .OrderByDescending(item => item.createdAt)
-                        .OrderByDescending(item => item.CompleteDate)
+                items = await budgetTable
 						.ToEnumerableAsync();
-                }
-                else
-                {
-                    items = await todoTable
-                        .Where(todoItem => todoItem.Done != IsDoingTaskShow)
-                        .OrderByDescending(item => item.createdAt)
-                        .OrderByDescending(item => item.Priority)
-                        .ToEnumerableAsync();
-                }
-				return new ObservableCollection<TodoItem>(items);
+
+				return new ObservableCollection<BudgetManagement>(items);
 			}
 			catch (MobileServiceInvalidOperationException msioe)
 			{
@@ -119,23 +105,23 @@ namespace TaskList
 			return null;
 		}
 
-        public async Task SaveTaskAsync(TodoItem item)
+		public async Task SaveTaskAsync(BudgetManagement item)
 		{
 			if (item.Id == null)
 			{
-                await todoTable.InsertAsync(item);
+                await budgetTable.InsertAsync(item);
 			}
 			else
 			{
-				await todoTable.UpdateAsync(item);
+				await budgetTable.UpdateAsync(item);
 			}
 		}
-		public async Task DeleteTaskAsync(TodoItem item)
+        public async Task DeleteTaskAsync(BudgetManagement item)
 		{
 			if (item.Id != null)
 			{
-				await todoTable.DeleteAsync(item);
-			}			
+				await budgetTable.DeleteAsync(item);
+			}
 		}
 #if OFFLINE_SYNC_ENABLED
         public async Task SyncAsync()
@@ -184,3 +170,4 @@ namespace TaskList
 #endif
 	}
 }
+

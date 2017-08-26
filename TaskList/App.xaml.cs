@@ -10,10 +10,13 @@ namespace TaskList
         {
             InitializeComponent();
 
-            MainPage = new RootPage();
+            Root = new RootPage();
+            MainPage = Root;
         }
+        public static Color MainBackGround = Color.FromHex("dce8ef");
+        public static RootPage Root;
 
-        protected override void OnStart()
+		protected override void OnStart()
         {
             // Handle when your app starts
         }
@@ -29,6 +32,7 @@ namespace TaskList
         }
     }
 
+
     public class RootPage : MasterDetailPage
     {
 		public RootPage()
@@ -39,30 +43,44 @@ namespace TaskList
 
 			Master = menuPage;
 
-			var detail = new NavigationPage(new TaskListPage());
+			var detail = new NavigationPage(taskListPage);
             detail.BarBackgroundColor = Color.DeepSkyBlue; //Color.FromHex("3498DB");
 			detail.BarTextColor = Color.White;
 			Detail = detail;
 
 		}
+        public static TaskListPage taskListPage = new TaskListPage();
+        public static MoneyPage moneyPage = new MoneyPage();
+
 		/// <summary>
 		/// ページ遷移のメソッドです。
 		/// </summary>
 		/// <param name="menu">MenuItem</param>
 		void NavigateTo(MenuListItem menu)
 		{
-			// menuPage の List<MenuItem> の選択値を MenuItem で受け取っているので
-			// 予め定義されたページに移動できるってことは分かるんですが、凄いですね。
-			Page displayPage = (Page)Activator.CreateInstance(menu.TargetType);
+            NavigateTo(menu.TargetType);
+
+		}
+        public void NavigateTo(Type targetType)
+        {
+			Page displayPage;
+
+			if (targetType == typeof(TaskListPage))
+				displayPage = taskListPage;
+			else if (targetType == typeof(MoneyPage))
+				displayPage = moneyPage;
+			else
+				displayPage = (Page)Activator.CreateInstance(targetType);
+
 
 			// 同じく各ページに移動する時にもバーの色を再設定 (このやり方では必須)
 			var detail = new NavigationPage(displayPage);
-            detail.BarBackgroundColor = menu.TargetType == typeof(MoneyPage) ? Color.Green : Color.DeepSkyBlue;
+			detail.BarBackgroundColor = targetType == typeof(MoneyPage) ? Color.Green : Color.DeepSkyBlue;
 			detail.BarTextColor = Color.White;
 			Detail = detail;
 
 			IsPresented = false;
-		}
+        }
     }
 	public class HumMenuPage : ContentPage
 	{
@@ -71,7 +89,7 @@ namespace TaskList
 		public HumMenuPage()
 		{
 			Title = "Menu"; // Icon を指定しても Title プロパティは必須項目です。
-			BackgroundColor = Color.FromHex("dce8ef");
+            BackgroundColor = Color.FromHex("dce8ef");
 
 			// ListView 設定
 			Menu = new MenuListView();

@@ -16,6 +16,75 @@ namespace TaskList.ViewModel
         }
         private void Initialize()
         {
+            TodoInputViewModel = new TodoInputViewModel((obj) =>
+            {
+                if (obj is ChargeItem)
+                {
+                    (obj as ChargeItem).IsSelected = !(obj as ChargeItem).IsSelected;
+                    SaveChargeItemState();
+                    RaisePropertyChanged("VisibleTaskList");
+                    RaisePropertyChanged("TaskCount");
+                }
+            });
+            TodoInputViewModel.ButtonCaption = "追加";
+            TodoInputViewModel.IsCreate = true;
+			TodoInputViewModel.AddClickAction = async (o) =>
+			{
+                var item = CreateTodoItem(TodoInputViewModel);
+                if (TodoItemManager.DefaultManager.IsDoingTaskShow)
+                {
+                    if (TaskList.Count > 0)
+                    {
+                        TaskList.Insert(0, item);
+                    }
+                    else
+                    {
+                        TaskList.Add(item);
+                    }
+                    RaisePropertyChanged("VisibleTaskList");
+                    RaisePropertyChanged("TaskCount");
+                }
+                await SaveItem(item);
+                TodoInputViewModel.TaskText = string.Empty;
+			};
+
+			TodoEditViewModel = new TodoInputViewModel(null);
+			TodoEditViewModel.ButtonCaption = "OK"; 
+            TodoEditViewModel.IsEdit = true;
+			TodoEditViewModel.AddClickAction = async (o) =>
+			{
+                if (o is TodoInputViewModel)
+                {
+                    var item = CreateTodoItem(o as TodoInputViewModel);
+
+                    if (TodoItemManager.DefaultManager.IsDoingTaskShow)
+                    {
+                        //Idから同じアイテムを探す
+                        var updtitem = TaskList.Where((itm) => itm.Id == item.Id).FirstOrDefault();
+                        if (updtitem != null)
+                        {
+                            //編集画面で書き換えない情報を渡す
+                            item.Priority = updtitem.Priority;
+                            //アイテムを削除し再挿入
+                            int index = TaskList.IndexOf(updtitem);
+                            TaskList.Remove(updtitem);
+                            TaskList.Insert(index, item);
+                        }
+                        else
+                        {
+                            TaskList.Add(item);
+                        }
+						RaisePropertyChanged("VisibleTaskList");
+                    }
+
+                    await SaveItem(item);
+                    if (TodoEditViewModel.CancelAction != null)
+                    {
+                        TodoEditViewModel.CancelAction(null);
+                    }
+                }
+			};
+
             ModeChangeClickAction = (o) =>
             {
                 TodoItemManager.DefaultManager.IsDoingTaskShow = !TodoItemManager.DefaultManager.IsDoingTaskShow;
@@ -25,58 +94,25 @@ namespace TaskList.ViewModel
             };
             ApperingAction = () =>
             {
-                IsRefresh = true;
+                if(!isLoaded)
+                {
+                    isLoaded = true;
+                    IsRefresh = true;
+                }
             };
 
-            AddClickAction = async (o) =>
-            {
-                var item = CreateTodoItem();
-                if (TodoItemManager.DefaultManager.IsDoingTaskShow)
-                {
-                    if(TaskList.Count > 0)
-                    {
-                        TaskList.Insert(0,item);
-                    }
-                    else
-                    {
-						TaskList.Add(item);
-					}
-					RaisePropertyChanged("VisibleTaskList");
-					RaisePropertyChanged("TaskCount");
-                }
-                TaskText = null;
-                await SaveItem(item);
-            };
             ListRefreshAction = () =>
             {
                 return RefreshList();
             };
 
-            Action<object> clickedAction = (obj) => 
-            {
-                if(obj is ChargeItem)
-                {
-                    (obj as ChargeItem).IsSelected = !(obj as ChargeItem).IsSelected;
-                    SaveChargeItemState();
-                    RaisePropertyChanged("VisibleTaskList");
-                    RaisePropertyChanged("TaskCount");
-                }
-            };
-
-            ChargeItems = new ObservableCollection<ChargeItem>() 
-            {
-                new ChargeItem(){Name = "なし", NarrowDownName = "担当者なし",Id = null,IsSelected = true,ClickedAction = clickedAction},
-				new ChargeItem(){Name = "智ちゃん",Id = "tomoko",IsSelected = true,ClickedAction = clickedAction},
-                new ChargeItem(){Name = "義明",Id = "yoshiaki",IsSelected = true,ClickedAction = clickedAction},
-            };
             LoadChaegeItemsState();
-            SelectedChargeItem = ChargeItems.First();
-            LimitDate = DateTime.Now;
+
         }
 
         private void LoadChaegeItemsState()
         {
-			foreach (var item in ChargeItems)
+			foreach (var item in TodoInputViewModel.ChargeItems)
 			{
                 if(Application.Current.Properties.ContainsKey("ChargeItem_" + item.Name))
                 {
@@ -87,44 +123,47 @@ namespace TaskList.ViewModel
 
         private void SaveChargeItemState()
         {
-            foreach(var item in ChargeItems)
+            foreach(var item in TodoInputViewModel.ChargeItems)
             {
                 Application.Current.Properties["ChargeItem_" + item.Name] = item.IsSelected;
             }
         }
 
-        private TodoItem CreateTodoItem(string name = "完了")
+        private TodoItem CreateTodoItem(TodoInputViewModel targetViewModel, string name = "完了")
         {
 
             var item = new TodoItem()
             {
-                Name = TaskText,
+                Name = targetViewModel.TaskText,
                 ButtonCaption = name,
-                IsSetLimit = IsUseLimitDate,
-                UserName = SelectedChargeItem.Id,
+                IsSetLimit = targetViewModel.IsUseLimitDate,
+                UserName = targetViewModel.SelectedChargeItem.Id,
             };
-            if(IsUseLimitDate)
+            if(targetViewModel.IsUseLimitDate)
             {
-                item.LimitDate = LimitDate;
+                item.LimitDate = targetViewModel.LimitDate;
+            }
+            if(!string.IsNullOrEmpty(targetViewModel.Id))
+            {
+                item.Id = targetViewModel.Id;
             }
             SetAction(item);
             return item;
         }
         private void SetAction(TodoItem item)
         {
-            Action<object> clickedAction = async (obj) =>
-            {
-                if (obj is TodoItem)
-                {
-                    TaskList.Remove(obj as TodoItem);
-                    (obj as TodoItem).Done = !(obj as TodoItem).Done;
-                    (obj as TodoItem).CompleteDate = DateTime.Now;
-                    await SaveItem(obj as TodoItem);
+			Action<object> stateChangeButtonClickedAction = new Action<object>(async (obj) =>
+			{
+				if (obj is TodoItem)
+				{
+					TaskList.Remove(obj as TodoItem);
+					(obj as TodoItem).Done = !(obj as TodoItem).Done;
+					(obj as TodoItem).CompleteDate = DateTime.Now;
+					await SaveItem(obj as TodoItem);
 					RaisePropertyChanged("VisibleTaskList");
 					RaisePropertyChanged("TaskCount");
-                }
-            };
-
+				}
+			});
             Action<object> starclickedAction = async (obj) =>
             {
                 if (obj is TodoItem)
@@ -136,7 +175,7 @@ namespace TaskList.ViewModel
 
             Action<object> deleteMenuClickAction = async (obj) =>
             {
-                if (obj is TodoItem)
+                if (obj is TodoItem && CheckedDelete != null && await CheckedDelete())
                 {
                     try
                     {
@@ -151,9 +190,32 @@ namespace TaskList.ViewModel
                     }
                 }
             };
-            item.ClickAction = clickedAction;
+            Action<object> editMenuClickAction = async (obj) =>
+            {
+                if (obj is TodoItem)
+                {
+                    TodoEditViewModel.IsShowDetail = false;
+                    TodoEditViewModel.Id = (obj as TodoItem).Id;
+					TodoEditViewModel.TaskText = (obj as TodoItem).Name;
+					if (!string.IsNullOrEmpty((obj as TodoItem).UserName))
+					{
+						TodoEditViewModel.IsShowDetail = true;
+						TodoEditViewModel.SelectedChargeItem = TodoEditViewModel.ChargeItems.Where((itm) => itm.Id == (obj as TodoItem).UserName).FirstOrDefault();
+					}
+
+					if ((obj as TodoItem).LimitDate > new DateTime(1900, 1, 1))
+					{
+						TodoEditViewModel.IsShowDetail = true;
+						TodoEditViewModel.IsUseLimitDate = true;
+						TodoEditViewModel.LimitDate = (obj as TodoItem).LimitDate;
+					}
+					await TodoEdit();                    
+                }
+            };
+            item.ClickAction = stateChangeButtonClickedAction;
             item.StarClickAction = starclickedAction;
             item.DeleteMenuClickAction = deleteMenuClickAction;
+            item.EditMenuClickAction = editMenuClickAction;
         }
 
 
@@ -177,7 +239,6 @@ namespace TaskList.ViewModel
         {
             await TodoItemManager.DefaultManager.SaveTaskAsync(targetitem);
         }
-
         private async Task DeleteItem(TodoItem targetItem)
         {
             await TodoItemManager.DefaultManager.DeleteTaskAsync(targetItem);
@@ -207,7 +268,7 @@ namespace TaskList.ViewModel
                 if (_taskList == null)
                     return null;
 
-                var selectedlist = ChargeItems.Where((citem) => citem.IsSelected);
+                var selectedlist = TodoInputViewModel.ChargeItems.Where((citem) => citem.IsSelected);
                 return new ObservableCollection<TodoItem>(_taskList.Where((item) => selectedlist.Select((sitem) => sitem.Id).Contains(item.UserName)));
             }
         }
@@ -216,43 +277,15 @@ namespace TaskList.ViewModel
             get { return _taskList != null ? 0 : _taskList.Count; }
         }
 
-		private ObservableCollection<ChargeItem> _chargeItems;
-		public ObservableCollection<ChargeItem> ChargeItems
-		{
-			get { return _chargeItems; }
-			set
-			{
-				_chargeItems = value;
-				RaisePropertyChanged();
-			}
-		}
-
-        private ChargeItem _selectedChargeItem;
-        public ChargeItem SelectedChargeItem
-        {
-            get { return _selectedChargeItem; }
-            set
-            {
-                _selectedChargeItem = value;
-                RaisePropertyChanged();
-            }
-        }
+        public Func<Task<bool>> CheckedDelete { get; set; }
+        public Func<Task<bool>> TodoEdit { get; set; }
+        public TodoInputViewModel TodoInputViewModel { get; set; }
+        public TodoInputViewModel TodoEditViewModel { get; set; }
         public Action ApperingAction { get; set; }
-        public Action<object> AddClickAction { get; set; }
-        public Action<object> DeleteMenuClickAction { get; set; }
         public Action<object> ModeChangeClickAction { get; set; }
         public Func<Task> ListRefreshAction { get; set; }
 
-		private DateTime _limitDate;
-		public DateTime LimitDate
-		{
-			get { return _limitDate; }
-			set
-			{
-				_limitDate = value;
-				RaisePropertyChanged();
-			}
-		}
+
         private bool _isDoingTaskShow = true;
         public bool IsDoingTaskShow
         {
@@ -264,19 +297,7 @@ namespace TaskList.ViewModel
             }
         }
 
-        private string _taskText;
-        public string TaskText
-        {
-            get
-            {
-                return _taskText;
-            }
-            set
-            {
-                _taskText = value;
-                RaisePropertyChanged();
-            }
-        }
+
         private bool _isRefresh;
         public bool IsRefresh
         {
@@ -290,38 +311,8 @@ namespace TaskList.ViewModel
                 RaisePropertyChanged();
             }
         }
-		private bool _isShowDetail;
-		public bool IsShowDetail
-		{
-			get
-			{
-				return _isShowDetail;
-			}
-			set
-			{
-				_isShowDetail = value;
-                if(!value)
-                {
-                    IsUseLimitDate = false;
-                    LimitDate = DateTime.Now;
-                    SelectedChargeItem = ChargeItems != null ? ChargeItems.First() : null;
-                }
-				RaisePropertyChanged();
-			}
-		}
-		private bool _isUseLimitDate;
-		public bool IsUseLimitDate
-		{
-			get
-			{
-				return _isUseLimitDate;
-			}
-			set
-			{
-				_isUseLimitDate = value;
-				RaisePropertyChanged();
-			}
-		}
+        private bool isLoaded { get; set; }
+
         public string ModeButtonText
         {
             get { return TodoItemManager.DefaultManager.IsDoingTaskShow ? "完了タスクを表示" : "実行中タスクを表示"; }
