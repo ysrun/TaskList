@@ -50,7 +50,6 @@ namespace TaskList.ViewModel
 
 			TodoEditViewModel = new TodoInputViewModel(null);
 			TodoEditViewModel.ButtonCaption = "OK"; 
-            TodoEditViewModel.IsEdit = true;
 			TodoEditViewModel.AddClickAction = async (o) =>
 			{
                 if (o is TodoInputViewModel)
@@ -88,9 +87,12 @@ namespace TaskList.ViewModel
             ModeChangeClickAction = (o) =>
             {
                 TodoItemManager.DefaultManager.IsDoingTaskShow = !TodoItemManager.DefaultManager.IsDoingTaskShow;
+                IsDoingTaskShow = TodoItemManager.DefaultManager.IsDoingTaskShow;
                 RaisePropertyChanged("ModeButtonText");
                 RaisePropertyChanged("ModeText");
-                IsRefresh = true;
+				RaisePropertyChanged("VisibleTaskList");
+				RaisePropertyChanged("TaskCount");
+                //IsRefresh = true;
             };
             ApperingAction = () =>
             {
@@ -129,13 +131,13 @@ namespace TaskList.ViewModel
             }
         }
 
-        private TodoItem CreateTodoItem(TodoInputViewModel targetViewModel, string name = "完了")
+        private TodoItem CreateTodoItem(TodoInputViewModel targetViewModel)
         {
 
             var item = new TodoItem()
             {
                 Name = targetViewModel.TaskText,
-                ButtonCaption = name,
+                //ButtonCaption = name,
                 IsSetLimit = targetViewModel.IsUseLimitDate,
                 UserName = targetViewModel.SelectedChargeItem.Id,
             };
@@ -156,12 +158,15 @@ namespace TaskList.ViewModel
 			{
 				if (obj is TodoItem)
 				{
+                    //リストちらつき対策、一旦リストからデータを消す
 					TaskList.Remove(obj as TodoItem);
+					RaisePropertyChanged("VisibleTaskList");
+					RaisePropertyChanged("TaskCount");
 					(obj as TodoItem).Done = !(obj as TodoItem).Done;
 					(obj as TodoItem).CompleteDate = DateTime.Now;
 					await SaveItem(obj as TodoItem);
-					RaisePropertyChanged("VisibleTaskList");
-					RaisePropertyChanged("TaskCount");
+                    //リストちらつき対策、消したデータを戻す
+					TaskList.Add(obj as TodoItem);
 				}
 			});
             Action<object> starclickedAction = async (obj) =>
@@ -195,6 +200,8 @@ namespace TaskList.ViewModel
                 if (obj is TodoItem)
                 {
                     TodoEditViewModel.IsShowDetail = false;
+                    TodoEditViewModel.IsEdit = !(obj as TodoItem).Done;
+                    TodoEditViewModel.IsDetail = (obj as TodoItem).Done;
                     TodoEditViewModel.Id = (obj as TodoItem).Id;
 					TodoEditViewModel.TaskText = (obj as TodoItem).Name;
 					if (!string.IsNullOrEmpty((obj as TodoItem).UserName))
@@ -229,7 +236,7 @@ namespace TaskList.ViewModel
                 foreach (TodoItem item in items)
                 {
                     SetAction(item);
-                    item.ButtonCaption = TodoItemManager.DefaultManager.IsDoingTaskShow ? "完了" : "実行中に戻す";
+                    //item.ButtonCaption = TodoItemManager.DefaultManager.IsDoingTaskShow ? "完了" : "実行中に戻す";
                 }
             }
             TaskList = items;
@@ -269,7 +276,14 @@ namespace TaskList.ViewModel
                     return null;
 
                 var selectedlist = TodoInputViewModel.ChargeItems.Where((citem) => citem.IsSelected);
-                return new ObservableCollection<TodoItem>(_taskList.Where((item) => selectedlist.Select((sitem) => sitem.Id).Contains(item.UserName)));
+
+                var tasklist = _taskList.Where((item) => selectedlist.Select((sitem) => sitem.Id).Contains(item.UserName) && item.Done != IsDoingTaskShow);
+
+                if (!IsDoingTaskShow)
+                    return new ObservableCollection<TodoItem>(tasklist.OrderByDescending(item => item.CompleteDate));
+                else
+                    return new ObservableCollection<TodoItem>(tasklist);
+
             }
         }
         public int TaskCount

@@ -78,8 +78,13 @@ namespace TaskList.ViewModel
 			{
 				_taskText = value;
 				RaisePropertyChanged();
+                RaisePropertyChanged("IsNotEmptyTaskText");
 			}
 		}
+        public bool IsNotEmptyTaskText
+        {
+            get { return !string.IsNullOrEmpty(TaskText); }
+        }
 		private bool _isUseLimitDate;
 		public bool IsUseLimitDate
 		{
@@ -124,6 +129,20 @@ namespace TaskList.ViewModel
 				RaisePropertyChanged();
 			}
 		}
+		private bool _isDetail;
+		public bool IsDetail
+		{
+			get { return _isDetail; }
+			set
+			{
+				_isDetail = value;
+				RaisePropertyChanged();
+			}
+		}
+        public bool IsEnabled
+        {
+            get { return IsEdit || IsCreate; }
+        }
 		private bool _isCreate;
 		public bool IsCreate
 		{

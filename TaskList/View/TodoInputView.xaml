@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
     x:Class="TaskList.TodoInputView"
     xmlns:ViewModel="clr-namespace:TaskList.ViewModel"
     xmlns:Attached="clr-namespace:TaskList.AttachedProperty"
@@ -10,14 +11,17 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid IsVisible="{Binding IsEdit}" Margin="0,0,5,0" BackgroundColor="{x:Static Local:App.MainBackGround}">
                 <Label Margin="10" Text="Edit"/>
             </Grid>
-            <Grid Grid.Row="1" Margin="10,0" >
+            <Grid IsVisible="{Binding IsDetail}" Margin="0,0,5,0" BackgroundColor="{x:Static Local:App.MainBackGround}">
+                <Label Margin="10" Text="Detail"/>
+            </Grid>
+            <Grid Grid.Row="1" Margin="10,0">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -27,8 +31,8 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Label VerticalOptions="Center" IsVisible="{Binding IsEdit}" Text="タスク：" />
-                <Entry Grid.Column="1" VerticalOptions="Center" Text="{Binding TaskText}" Placeholder="タスクを入力して下さい">
+                <Label VerticalOptions="Center" IsVisible="{Binding IsEdit}" Text="タスク："  IsEnabled="{Binding IsEnabled}"/>
+                <Entry Grid.Column="1" VerticalOptions="Center" Text="{Binding TaskText}" Placeholder="タスクを入力して下さい" IsEnabled="{Binding IsEnabled}">
                     <Entry.Triggers>
                         <DataTrigger TargetType="Entry" Binding="{Binding IsEdit}" Value="false">
                             <Setter Property="Grid.Column" Value="0"/>
@@ -37,14 +41,21 @@
                     </Entry.Triggers>
                 </Entry>
                 <Frame Grid.Column="2" IsVisible="{Binding IsCreate}" HeightRequest="35" Margin="10,0,0,0" Padding="0" OutlineColor="Blue" HasShadow="false">
-                    <Button WidthRequest="50" Text="{Binding ButtonCaption}" Attached:ButtonAttached.OnClickAction="{Binding AddClickAction}"/>
+                     <Frame.Triggers>
+                        <DataTrigger TargetType="Frame" Binding="{Binding IsNotEmptyTaskText}" Value="false">
+                            <Setter Property="OutlineColor" Value="Gray"/>
+                       </DataTrigger>
+                    </Frame.Triggers>
+                    <Button WidthRequest="50" Text="{Binding ButtonCaption}"
+                        IsEnabled="{Binding IsNotEmptyTaskText}"
+                    Attached:ButtonAttached.OnClickAction="{Binding AddClickAction}"/>
                 </Frame>
 
-                <StackLayout Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="3">
+                <StackLayout Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="3" IsEnabled="{Binding IsEnabled}">
                     <Label Text="詳細設定"  VerticalOptions="Center" FontSize="16" />
                     <Switch IsToggled="{Binding IsShowDetail}" Scale="0.7" />
                 </StackLayout>
-                <Frame OutlineColor="Gray" Grid.Row="2" Margin="0,0,0,0" Padding="10" HasShadow="false" IsVisible="{Binding IsShowDetail}" Grid.ColumnSpan="3">
+                <Frame OutlineColor="Gray" Grid.Row="2" Margin="0,0,0,0" Padding="10" HasShadow="false" IsVisible="{Binding IsShowDetail}" Grid.ColumnSpan="3" IsEnabled="{Binding IsEnabled}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -78,6 +89,9 @@
                         <Button WidthRequest="90" Text="キャンセル" Attached:ButtonAttached.OnClickAction="{Binding CancelAction}"/>
                     </Frame>
                 </StackLayout>
+                <Frame Grid.Row="3" IsVisible="{Binding IsDetail}" HeightRequest="35" Grid.Column="0" Padding="0" OutlineColor="Blue" HasShadow="false">
+                    <Button WidthRequest="50" Text="戻る" Attached:ButtonAttached.OnClickAction="{Binding CancelAction}"/>
+                </Frame>
             </Grid>
         </Grid>
 	</ContentView.Content>

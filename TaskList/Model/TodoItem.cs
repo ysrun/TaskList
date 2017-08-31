@@ -36,9 +36,19 @@ namespace TaskList
         public bool Done
         {
             get { return done; }
-            set { done = value; }
+            set
+            {
+                done = value; 
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(ButtonCaption));
+            }
         }
 
+        [JsonIgnore]
+        public string DetailMenuText
+        {
+            get { return done ? "詳細表示" : "タスクを編集";}
+        }
         private string userName;
 		[JsonProperty(PropertyName = "UserName")]
 		public string UserName
@@ -91,8 +101,8 @@ namespace TaskList
 			set 
             {
                 limitDate = value;
-                RaisePropertyChanged("LimitMode");
-                RaisePropertyChanged("DoingDateMsg");
+                RaisePropertyChanged(nameof(LimitMode));
+                RaisePropertyChanged(nameof(DoingDateMsg));
             }
 		}
 
@@ -150,7 +160,7 @@ namespace TaskList
 		public Action<object> EditMenuClickAction { get; set; }
 
         [JsonIgnore]
-        public string ButtonCaption { get; set; }
+        public string ButtonCaption { get { return Done ? "実行中に戻す" : "完了"; } }
 
         [JsonIgnore]
         public string DoingDateMsg

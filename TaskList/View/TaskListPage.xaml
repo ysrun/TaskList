@@ -77,7 +77,7 @@
                 <DataTemplate>
                     <ViewCell>
                     <ViewCell.ContextActions>
-                        <MenuItem Attached:MenuItemAttached.OnClickAction="{Binding EditMenuClickAction}" Text="タスクを編集" />
+                        <MenuItem Attached:MenuItemAttached.OnClickAction="{Binding EditMenuClickAction}" Text="{Binding DetailMenuText}"/>
                         <MenuItem IsDestructive="true" Attached:MenuItemAttached.OnClickAction="{Binding DeleteMenuClickAction}" Text="タスクを削除" />
                     </ViewCell.ContextActions>
                         <ViewCell.View>
