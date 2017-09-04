@@ -19,9 +19,9 @@ namespace TaskList
         {
 			if (BindingContext is TaskListViewModel)
 			{
-				(BindingContext as TaskListViewModel).CheckedDelete = async () =>
+				(BindingContext as TaskListViewModel).CheckedDelete = async (str) =>
 				{
-					return await DisplayAlert("確認", "削除します、宜しいですか？", "はい", "いいえ");
+                    return await DisplayAlert("確認", "「" + str + "」を削除します、宜しいですか？", "はい", "いいえ");
 				};
                 (BindingContext as TaskListViewModel).TodoEdit = async () =>
 				{

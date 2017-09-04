@@ -16,7 +16,7 @@ namespace TaskList.ViewModel
         }
         private void Initialize()
         {
-            TodoInputViewModel = new TodoInputViewModel((obj) =>
+            Action<object> clickedaction = (obj) =>
             {
                 if (obj is ChargeItem)
                 {
@@ -25,12 +25,23 @@ namespace TaskList.ViewModel
                     RaisePropertyChanged("VisibleTaskList");
                     RaisePropertyChanged("TaskCount");
                 }
-            });
+            };
+
+            LimitItems = new ObservableCollection<ChargeItem>()
+			{
+				new ChargeItem(){Name = "期限なし", Id = "nolimit",IsSelected = true,ClickedAction = clickedaction},
+				new ChargeItem(){Name = "期限あり",Id = "limit",IsSelected = true,ClickedAction = clickedaction},
+				new ChargeItem(){Name = "繰り返し",Id = "loop",IsSelected = true,ClickedAction = clickedaction},
+			};
+
+            TodoInputViewModel = new TodoInputViewModel(clickedaction);
+
             TodoInputViewModel.ButtonCaption = "追加";
             TodoInputViewModel.IsCreate = true;
 			TodoInputViewModel.AddClickAction = async (o) =>
 			{
                 var item = CreateTodoItem(TodoInputViewModel);
+				TodoInputViewModel.TaskText = string.Empty;
                 if (TodoItemManager.DefaultManager.IsDoingTaskShow)
                 {
                     if (TaskList.Count > 0)
@@ -45,7 +56,6 @@ namespace TaskList.ViewModel
                     RaisePropertyChanged("TaskCount");
                 }
                 await SaveItem(item);
-                TodoInputViewModel.TaskText = string.Empty;
 			};
 
 			TodoEditViewModel = new TodoInputViewModel(null);
@@ -121,6 +131,13 @@ namespace TaskList.ViewModel
                     item.IsSelected = (bool)Application.Current.Properties["ChargeItem_" + item.Name];
                 }
 			}
+            foreach (var item in LimitItems)
+			{
+				if (Application.Current.Properties.ContainsKey("ChargeItem_" + item.Name))
+				{
+					item.IsSelected = (bool)Application.Current.Properties["ChargeItem_" + item.Name];
+				}
+			}
         }
 
         private void SaveChargeItemState()
@@ -129,6 +146,10 @@ namespace TaskList.ViewModel
             {
                 Application.Current.Properties["ChargeItem_" + item.Name] = item.IsSelected;
             }
+            foreach (var item in LimitItems)
+			{
+				Application.Current.Properties["ChargeItem_" + item.Name] = item.IsSelected;
+			}        
         }
 
         private TodoItem CreateTodoItem(TodoInputViewModel targetViewModel)
@@ -144,6 +165,53 @@ namespace TaskList.ViewModel
             if(targetViewModel.IsUseLimitDate)
             {
                 item.LimitDate = targetViewModel.LimitDate;
+                item.IsSetLimit = true;
+            }
+            if(targetViewModel.IsUseRegular)
+            {
+                item.IsRegularTask = true;
+                item.RegularTaskType = targetViewModel.SelectedRegularItem.No;
+                DateTime nowdate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
+                switch (item.RegularTaskType)
+                {
+                    case 0:
+                        item.LimitDate = nowdate;
+                        break;
+                    case 1:
+                        item.RegularTaskData = targetViewModel.SelectedWeekItem.No.ToString();
+                        int weekno;
+                        if(int.TryParse(item.RegularTaskData,out weekno))
+                        {
+                            if ((int)DateTime.Now.DayOfWeek == weekno)
+                            {
+                                item.LimitDate = nowdate;
+                            }
+                            if((int)DateTime.Now.DayOfWeek < weekno)
+                            {
+                                item.LimitDate = nowdate.AddDays(weekno - (int)DateTime.Now.DayOfWeek);
+                            }
+                            if((int)DateTime.Now.DayOfWeek > weekno)
+                            {
+                                item.LimitDate = nowdate.AddDays(7 - ((int)DateTime.Now.DayOfWeek - weekno));
+                            }
+                        }
+                        break;
+                    case 2:
+                        item.RegularTaskData = targetViewModel.SelectedMonthItem.No.ToString();
+						int day;
+                        if (int.TryParse(item.RegularTaskData, out day))
+                        {
+                            int daysinmonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+                            item.LimitDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, day > daysinmonth ? daysinmonth : day);
+                            if(day < DateTime.Now.Day)
+                            {
+                                item.LimitDate = item.LimitDate.AddMonths(1);
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
             if(!string.IsNullOrEmpty(targetViewModel.Id))
             {
@@ -158,15 +226,54 @@ namespace TaskList.ViewModel
 			{
 				if (obj is TodoItem)
 				{
-                    //リストちらつき対策、一旦リストからデータを消す
-					TaskList.Remove(obj as TodoItem);
-					RaisePropertyChanged("VisibleTaskList");
+                    TodoItem todoitem = obj as TodoItem;
+                    if(!todoitem.IsRegularTask)
+                    {
+                        //リストちらつき対策、一旦リストからデータを消す
+					    TaskList.Remove(todoitem);
+                    }
+                    else
+                    {
+                        //Idがnullの複製を用いて、履歴のInsertを実施
+                        todoitem = todoitem.GetClone();
+                        todoitem.Id = null;
+                    }
+                    RaisePropertyChanged("VisibleTaskList");
 					RaisePropertyChanged("TaskCount");
-					(obj as TodoItem).Done = !(obj as TodoItem).Done;
-					(obj as TodoItem).CompleteDate = DateTime.Now;
-					await SaveItem(obj as TodoItem);
-                    //リストちらつき対策、消したデータを戻す
-					TaskList.Add(obj as TodoItem);
+					todoitem.Done = !todoitem.Done;
+					todoitem.CompleteDate = DateTime.Now;
+					await SaveItem(todoitem);
+					//定期タスク以外は、リストちらつき対策として消したデータを戻す
+                    //定期タスクは、リストに履歴を追加
+					TaskList.Add(todoitem);
+                    if (todoitem.IsRegularTask)
+                    {
+                        //次回繰り返し日付の設定
+                        todoitem = obj as TodoItem;
+                        var nowdate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
+						switch (todoitem.RegularTaskType)
+						{
+							case 0:
+                                todoitem.LimitDate = todoitem.LimitDate.AddDays(1);
+								break;
+							case 1:
+								todoitem.LimitDate = todoitem.LimitDate.AddDays(7);
+								break;
+							case 2:
+                                var nextmonth = todoitem.LimitDate.AddMonths(1);
+								int day;
+								if (int.TryParse(todoitem.RegularTaskData, out day))
+								{
+									int daysinmonth = DateTime.DaysInMonth(nextmonth.Year, nextmonth.Month);
+                                    todoitem.LimitDate = new DateTime(nextmonth.Year, nextmonth.Month, day > daysinmonth ? daysinmonth : day);
+								}
+								break;
+							default:
+								break;
+						}
+                        //日付変更後の繰り返しデータもアップデート
+                        await SaveItem(todoitem);
+                    }
 				}
 			});
             Action<object> starclickedAction = async (obj) =>
@@ -180,7 +287,7 @@ namespace TaskList.ViewModel
 
             Action<object> deleteMenuClickAction = async (obj) =>
             {
-                if (obj is TodoItem && CheckedDelete != null && await CheckedDelete())
+                if (obj is TodoItem && CheckedDelete != null && await CheckedDelete((obj as TodoItem).Name))
                 {
                     try
                     {
@@ -216,6 +323,34 @@ namespace TaskList.ViewModel
 						TodoEditViewModel.IsUseLimitDate = true;
 						TodoEditViewModel.LimitDate = (obj as TodoItem).LimitDate;
 					}
+                    if((obj as TodoItem).IsRegularTask)
+                    {
+                        TodoEditViewModel.IsShowDetail = true;
+                        TodoEditViewModel.IsUseRegular = true;
+                        TodoEditViewModel.SelectedRegularItem = TodoEditViewModel.RegularItems.Where((itm) => itm.No == (obj as TodoItem).RegularTaskType).FirstOrDefault();
+                        if (TodoEditViewModel.SelectedRegularItem != null)
+                        {
+                            switch (TodoEditViewModel.SelectedRegularItem.No)
+                            {
+                                case 1:
+                                    int week;
+                                    if(int.TryParse((obj as TodoItem).RegularTaskData,out week))
+                                    {
+                                        TodoEditViewModel.SelectedWeekItem = TodoEditViewModel.WeekItems.Where((itm) => itm.No == week).FirstOrDefault();                                        
+                                    }
+                                    break;
+                                case 2:
+									int month;
+									if (int.TryParse((obj as TodoItem).RegularTaskData, out month))
+									{
+										TodoEditViewModel.SelectedMonthItem = TodoEditViewModel.MonthItems.Where((itm) => itm.No == month).FirstOrDefault();
+									}
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
 					await TodoEdit();                    
                 }
             };
@@ -277,13 +412,25 @@ namespace TaskList.ViewModel
 
                 var selectedlist = TodoInputViewModel.ChargeItems.Where((citem) => citem.IsSelected);
 
-                var tasklist = _taskList.Where((item) => selectedlist.Select((sitem) => sitem.Id).Contains(item.UserName) && item.Done != IsDoingTaskShow);
+                var tasklist = _taskList.Where((item) => selectedlist.Select((sitem) => sitem.Id).Contains(item.UserName) 
+                                               && item.Done != IsDoingTaskShow);
+                bool isnolimitselected = LimitItems.Where((item) => item.Id == "nolimit" && item.IsSelected).Count() != 0;
+                bool islimitselected = LimitItems.Where((item) => item.Id == "limit" && item.IsSelected).Count() != 0;
+                bool isloopselected = LimitItems.Where((item) => item.Id == "loop" && item.IsSelected).Count() != 0;
+
+                tasklist = tasklist.Where((item)=> (item.IsSetLimit && islimitselected) || (item.IsRegularTask && isloopselected) || (!item.IsSetLimit && !item.IsRegularTask && isnolimitselected));
+
+                //
 
                 if (!IsDoingTaskShow)
-                    return new ObservableCollection<TodoItem>(tasklist.OrderByDescending(item => item.CompleteDate));
+					return new ObservableCollection<TodoItem>(tasklist
+                                                              .OrderByDescending(item => item.createdAt)
+															  .OrderByDescending(item => item.CompleteDate));
                 else
-                    return new ObservableCollection<TodoItem>(tasklist);
-
+					return new ObservableCollection<TodoItem>(tasklist
+                                                              .OrderByDescending(item => item.createdAt)
+                                                              .OrderBy(item => item.SortDate)
+                                                              .OrderByDescending(item => item.Priority));
             }
         }
         public int TaskCount
@@ -291,7 +438,7 @@ namespace TaskList.ViewModel
             get { return _taskList != null ? 0 : _taskList.Count; }
         }
 
-        public Func<Task<bool>> CheckedDelete { get; set; }
+        public Func<string,Task<bool>> CheckedDelete { get; set; }
         public Func<Task<bool>> TodoEdit { get; set; }
         public TodoInputViewModel TodoInputViewModel { get; set; }
         public TodoInputViewModel TodoEditViewModel { get; set; }
@@ -311,7 +458,16 @@ namespace TaskList.ViewModel
             }
         }
 
-
+		private ObservableCollection<ChargeItem> _limitItems;
+		public ObservableCollection<ChargeItem> LimitItems
+		{
+			get { return _limitItems; }
+			set
+			{
+				_limitItems = value;
+				RaisePropertyChanged();
+			}
+		}
         private bool _isRefresh;
         public bool IsRefresh
         {

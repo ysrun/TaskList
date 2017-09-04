@@ -34,12 +34,18 @@
             <local:TodoInputView BindingContext="{Binding TodoInputViewModel}"/>
         </Grid>
         <Grid Grid.Row="1" Margin="20,0,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Label Text="表示タスク" />
-            <Controls:ItemsControl Grid.Column="1" HeightRequest="20" ItemsSource="{Binding TodoInputViewModel.ChargeItems}">
+            <Label Text="表示設定" FontSize="16" Grid.RowSpan="2" VerticalOptions="Center" />
+            <Label Text="担当者" FontSize="16" Grid.Column="1"/>
+            <Controls:ItemsControl Grid.Column="2" HeightRequest="20" ItemsSource="{Binding TodoInputViewModel.ChargeItems}">
                 <Controls:ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Grid>
@@ -51,8 +57,20 @@
                     </DataTemplate>
                 </Controls:ItemsControl.ItemTemplate>
             </Controls:ItemsControl>
+            <Label FontSize="16" Grid.Row="1" Grid.Column="1" Text="期限" />
+            <Controls:ItemsControl Grid.Row="1" Grid.Column="2" HeightRequest="20" ItemsSource="{Binding LimitItems}">
+                <Controls:ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Controls:SelectedButton Text="{Binding NarrowDownName}" IsSelected="{Binding IsSelected}"
+                                IsSelectedColor="#a9f990" 
+                                Attached:ButtonAttached.OnClickAction="{Binding ClickedAction}">
+                            </Controls:SelectedButton>
+                        </Grid>
+                    </DataTemplate>
+                </Controls:ItemsControl.ItemTemplate>
+            </Controls:ItemsControl>
         </Grid>
-
         <!--Taskが無い時の表示文書-->
         <Label Margin="10,10,0,0" Grid.Row="2" TextColor="Navy" Text = "タスクはありません">
             <Label.Triggers>
@@ -62,18 +80,18 @@
             </Label.Triggers>
         </Label>
         <!--Task一覧-->
-        <ListView Grid.Row="2" Attached:ListViewAttached.OnRefreshAction="{Binding ListRefreshAction}"
+        <Controls:UnselectableListView Grid.Row="2" Attached:ListViewAttached.OnRefreshAction="{Binding ListRefreshAction}"
             Attached:ListViewAttached.IsRefresh="{Binding IsRefresh}"
             ItemsSource="{Binding VisibleTaskList}" RowHeight="60">
-            <ListView.Triggers>
+            <Controls:UnselectableListView.Triggers>
 <!--                <DataTrigger TargetType="ListView" Binding="{Binding IsDoingTaskShow}" Value="False">
                     <Setter Property="RowHeight" Value="60"/>
                 </DataTrigger>-->
                 <DataTrigger TargetType="ListView" Binding="{Binding VisibleTaskList.Count}" Value="0">
                     <Setter Property="IsVisible" Value="False"/>
                 </DataTrigger>
-            </ListView.Triggers>
-            <ListView.ItemTemplate>
+            </Controls:UnselectableListView.Triggers>
+            <Controls:UnselectableListView.ItemTemplate>
                 <DataTemplate>
                     <ViewCell>
                     <ViewCell.ContextActions>
@@ -114,6 +132,17 @@
                                     </Button>
                                     <Frame Grid.Column="2" Margin="5" Padding="0" OutlineColor="Blue" HasShadow="false" VerticalOptions="Center">
                                         <Button Margin="5" Grid.Column="1" Text="{Binding ButtonCaption}" Attached:ButtonAttached.OnClickAction="{Binding ClickAction}"/>
+                                        <Frame.Triggers>
+                                            <MultiTrigger TargetType="Frame">
+                                                <MultiTrigger.Conditions>
+                                                    <BindingCondition Binding="{Binding Done}"
+                                                                           Value="True" />
+                                                    <BindingCondition Binding="{Binding IsRegularTask}"
+                                                                           Value="True" />
+                                                </MultiTrigger.Conditions>
+                                              <Setter Property="IsVisible" Value="False" />
+                                            </MultiTrigger>
+                                        </Frame.Triggers>
                                     </Frame>
                                 </Grid>
                                 <Grid RowSpacing="0" Grid.Row="1">
@@ -132,8 +161,8 @@
                         </ViewCell.View>
                      </ViewCell>
                 </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+            </Controls:UnselectableListView.ItemTemplate>
+        </Controls:UnselectableListView>
         <Grid Grid.Row="3" Margin="10,5,5,5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>

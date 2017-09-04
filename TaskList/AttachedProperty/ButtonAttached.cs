@@ -55,6 +55,11 @@ namespace TaskList.AttachedProperty
 		private static void OnActionChanged(BindableObject bindable, object oldValue, object newValue)
 		{
 			var listview = bindable as ListView;
+   //         listview.ItemTapped += (sender, e) => 
+   //         {
+   //             if (e == null) return; // has been set to null, do not 'process' tapped event
+   //             ((ListView)sender).SelectedItem = null; // de-select the row   
+			//};
 			if (newValue is Func<Task>)
 			{
                 listview.IsPullToRefreshEnabled = true;
@@ -86,5 +91,9 @@ namespace TaskList.AttachedProperty
                 //Device.BeginInvokeOnMainThread(() => listview.SetValue(IsRefreshProperty, false));
 			}
 		}
+
+	
+
+	
 	}
 }

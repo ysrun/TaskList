@@ -18,6 +18,11 @@ namespace TaskList
         string name;
         bool done;
 
+        public TodoItem GetClone()
+        {
+            return (TodoItem)this.MemberwiseClone();
+        }
+
         [JsonProperty(PropertyName = "id")]
         public string Id
         {
@@ -106,12 +111,45 @@ namespace TaskList
             }
 		}
 
+		//ソート用
+		[JsonIgnore]
+		public DateTime SortDate
+		{
+            get { return LimitDate > new DateTime(1970,1,1) ? LimitDate : DateTime.MaxValue; }
+		}
+
         private bool isSetLimit;
 		[JsonProperty(PropertyName = "IsSetLimit")]
 		public bool IsSetLimit
 		{
 			get { return isSetLimit; }
 			set { isSetLimit = value; }
+		}
+
+		private bool isRegularTask;
+		[JsonProperty(PropertyName = "IsRegularTask")]
+		public bool IsRegularTask
+		{
+			get { return isRegularTask; }
+			set { isRegularTask = value; }
+		}
+
+
+
+		private int regularTaskType;
+		[JsonProperty(PropertyName = "RegularTaskType")]
+		public int RegularTaskType
+		{
+			get { return regularTaskType; }
+			set { regularTaskType = value; }
+		}
+
+		private string regularTaskData;
+		[JsonProperty(PropertyName = "RegularTaskData")]
+		public string RegularTaskData
+		{
+			get { return regularTaskData; }
+			set { regularTaskData = value; }
 		}
 
 		[Version]
@@ -175,7 +213,55 @@ namespace TaskList
                 }
                 else
                 {
-                    msg = IsSetLimit && LimitDate > new DateTime(1900, 1, 1) ? "期限：" + LimitDate.ToString("yyyy/MM/dd") + "   " : string.Empty;
+					if (isRegularTask)
+					{
+                        msg = "繰り返し：";
+                        switch (RegularTaskType)
+                        {
+                            case 0:
+                                msg += "毎日"+ "   ";
+                                break;
+							case 1:
+                                string week = string.Empty;
+                                switch (regularTaskData)
+                                {
+                                    case "0":
+                                        week = "日曜日";
+                                        break;
+									case "1":
+										week = "月曜日";
+										break;
+									case "2":
+										week = "火曜日";
+										break;
+									case "3":
+										week = "水曜日";
+										break;
+									case "4":
+										week = "木曜日";
+										break;
+									case "5":
+										week = "金曜日";
+										break;
+									case "6":
+										week = "土曜日";
+										break;
+                                    default:
+                                        break;
+                                }
+                                msg += "毎週" + week + "   ";
+								break;
+                            case 2:
+                                msg += "毎月" + regularTaskData + "日   ";
+                                break;
+                            default:
+                                break;
+                        }
+					}
+                    if(LimitDate > new DateTime(1900, 1, 1) && (IsSetLimit || IsRegularTask))
+                    {
+                        msg += "期限：" + LimitDate.ToString("yyyy/MM/dd") + "   ";
+                    }
                 }
                 if(!string.IsNullOrEmpty(UserName))
                 {

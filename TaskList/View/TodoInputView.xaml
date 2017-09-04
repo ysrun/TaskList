@@ -20,7 +20,7 @@
             <Grid IsVisible="{Binding IsDetail}" Margin="0,0,5,0" BackgroundColor="{x:Static Local:App.MainBackGround}">
                 <Label Margin="10" Text="Detail"/>
             </Grid>
-            <Grid Grid.Row="1" Margin="10,0">
+            <Grid Grid.Row="1" Margin="10,0" RowSpacing="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -36,7 +36,7 @@
                     <Entry.Triggers>
                         <DataTrigger TargetType="Entry" Binding="{Binding IsEdit}" Value="false">
                             <Setter Property="Grid.Column" Value="0"/>
-                            <Setter Property="Grid.ColumnSpan" Value="2" />
+                            <Setter Property="Grid.ColumnSpan" Value="2"/>
                         </DataTrigger>
                     </Entry.Triggers>
                 </Entry>
@@ -48,30 +48,33 @@
                     </Frame.Triggers>
                     <Button WidthRequest="50" Text="{Binding ButtonCaption}"
                         IsEnabled="{Binding IsNotEmptyTaskText}"
-                    Attached:ButtonAttached.OnClickAction="{Binding AddClickAction}"/>
+                        Attached:ButtonAttached.OnClickAction="{Binding AddClickAction}"/>
                 </Frame>
 
                 <StackLayout Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="3" IsEnabled="{Binding IsEnabled}">
                     <Label Text="詳細設定"  VerticalOptions="Center" FontSize="16" />
                     <Switch IsToggled="{Binding IsShowDetail}" Scale="0.7" />
                 </StackLayout>
-                <Frame OutlineColor="Gray" Grid.Row="2" Margin="0,0,0,0" Padding="10" HasShadow="false" IsVisible="{Binding IsShowDetail}" Grid.ColumnSpan="3" IsEnabled="{Binding IsEnabled}">
+                <Frame OutlineColor="Gray" Grid.Row="2" Margin="0,10" Padding="10" HasShadow="false" IsVisible="{Binding IsShowDetail}" Grid.ColumnSpan="3" IsEnabled="{Binding IsEnabled}">
                     <Grid>
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Label Text="担当者" />
-                        <Picker Grid.Column="1" ItemsSource="{Binding ChargeItems}" SelectedItem="{Binding SelectedChargeItem}" ItemDisplayBinding="{Binding Name}" />
-                        <StackLayout Grid.Row="1"  Orientation="Horizontal">
-                            <Label Text="期限を設定"  VerticalOptions="Center" />
-                            <Switch IsToggled="{Binding IsUseLimitDate}" Scale="0.7" />
-                        </StackLayout>
-                        <DatePicker Grid.Row="1" Grid.Column="1" Format="yyyy/MM/dd" Date="{Binding LimitDate}">
+                        <Picker Grid.Column="2" Grid.ColumnSpan="2" ItemsSource="{Binding ChargeItems}" SelectedItem="{Binding SelectedChargeItem}" ItemDisplayBinding="{Binding Name}" />
+
+                            <Label Grid.Row="1" Text="期限を設定"  VerticalOptions="Center" />
+                            <Switch Grid.Row="1" Grid.Column="1" IsToggled="{Binding IsUseLimitDate}" Scale="0.7" />
+
+                        <DatePicker Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Format="yyyy/MM/dd" Date="{Binding LimitDate}">
                             <DatePicker.Triggers>
                                 <DataTrigger TargetType="DatePicker" Binding="{Binding IsUseLimitDate}" Value="false">
                                     <Setter Property="TextColor" Value="Gray"/>
@@ -79,6 +82,38 @@
                                 </DataTrigger>
                             </DatePicker.Triggers>
                         </DatePicker>
+                        <Label Grid.Row="2" Text="繰り返し"  VerticalOptions="Center" />
+                        <Switch Grid.Row="2" Grid.Column="1" IsToggled="{Binding IsUseRegular}" Scale="0.7" />
+                        <Picker Grid.Row="2" Grid.Column="2" ItemsSource="{Binding RegularItems}" SelectedItem="{Binding SelectedRegularItem}" ItemDisplayBinding="{Binding Name}">
+                            <Picker.Triggers>
+                                <DataTrigger TargetType="Picker" Binding="{Binding IsUseRegular}" Value="false">
+                                    <Setter Property="TextColor" Value="Gray"/>
+                                    <Setter Property="InputTransparent" Value="true" />
+                                </DataTrigger>
+                            </Picker.Triggers>
+                        </Picker>
+                        <Picker Grid.Row="2" Grid.Column="3" ItemsSource="{Binding WeekItems}" SelectedItem="{Binding SelectedWeekItem}" ItemDisplayBinding="{Binding Name}" IsVisible="false">
+                            <Picker.Triggers>
+                                <DataTrigger TargetType="Picker" Binding="{Binding SelectedRegularItem.No}" Value="1">
+                                    <Setter Property="IsVisible" Value="true"/>
+                                </DataTrigger>
+                                <DataTrigger TargetType="Picker" Binding="{Binding IsUseRegular}" Value="false">
+                                    <Setter Property="TextColor" Value="Gray"/>
+                                    <Setter Property="InputTransparent" Value="true" />
+                                </DataTrigger>
+                            </Picker.Triggers>
+                        </Picker>
+                        <Picker Grid.Row="2" Grid.Column="3" ItemsSource="{Binding MonthItems}" SelectedItem="{Binding SelectedMonthItem}" ItemDisplayBinding="{Binding Name}" IsVisible="false">
+                            <Picker.Triggers>
+                                <DataTrigger TargetType="Picker" Binding="{Binding IsUseRegular}" Value="false">
+                                    <Setter Property="TextColor" Value="Gray"/>
+                                    <Setter Property="InputTransparent" Value="true" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="Picker" Binding="{Binding SelectedRegularItem.No}" Value="2">
+                                    <Setter Property="IsVisible" Value="true"/>
+                                </DataTrigger>
+                            </Picker.Triggers>
+                        </Picker>
                     </Grid>
                 </Frame>
                 <StackLayout Grid.Row="3" Orientation="Horizontal" IsVisible="{Binding IsEdit}" Grid.ColumnSpan="3">

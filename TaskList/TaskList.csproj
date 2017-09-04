@@ -62,6 +62,8 @@
       <DependentUpon>TodoInputView.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModel\TodoInputViewModel.cs" />
+    <Compile Include="Controls\UnselectableListView.cs" />
+    <Compile Include="Model\ComboBoxItem.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Xamarin.Forms.Core">

@@ -89,27 +89,8 @@ namespace TaskList
                     await this.SyncAsync();
                 }
 #endif
-                IEnumerable<TodoItem> items;
+                IEnumerable<TodoItem> items = await todoTable.ToEnumerableAsync();
 
-                if (!IsDoingTaskShow)
-                {
-					items = await todoTable
-						//.Where(todoItem => todoItem.Done != IsDoingTaskShow)
-                        .OrderByDescending(item => item.createdAt)
-                        .OrderByDescending(item => item.CompleteDate)
-						.ToEnumerableAsync();
-                }
-                else
-                {
-                    items = await todoTable
-                        //.Where(todoItem => todoItem.Done != IsDoingTaskShow)
-                        .OrderByDescending(item => item.createdAt)
-                        //期限設定をしている日付の昇順→期限設定をしていないアイテムの順で並べたい
-                        .OrderBy(item => item.LimitDate)
-                        .OrderByDescending(item => item.IsSetLimit)
-                        .OrderByDescending(item => item.Priority)
-                        .ToEnumerableAsync();
-                }
 				return new ObservableCollection<TodoItem>(items);
 			}
 			catch (MobileServiceInvalidOperationException msioe)
